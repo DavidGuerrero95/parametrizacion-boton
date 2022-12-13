@@ -1,7 +1,7 @@
 package app.boton.parametrizacionboton.services;
 
-import app.boton.parametrizacionboton.models.EmergencyAgency;
-import app.boton.parametrizacionboton.repository.IEmergencyAgencyRepository;
+import app.boton.parametrizacionboton.models.ReportType;
+import app.boton.parametrizacionboton.repository.IReportTypeRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.Binary;
 import org.springframework.http.HttpStatus;
@@ -17,46 +17,49 @@ import java.util.Objects;
 
 @Service
 @Slf4j
-public class EmergencyAgencyService implements IEmergencyAgencyService{
+public class ReportTypeService implements IReportTypeService{
 
-    private final IEmergencyAgencyRepository agencyRepository;
+    private final IReportTypeRepository reportTypeRepository;
 
-    public EmergencyAgencyService(IEmergencyAgencyRepository agencyRepository) {
-        this.agencyRepository = agencyRepository;
+    public ReportTypeService(IReportTypeRepository reportTypeRepository) {
+        this.reportTypeRepository = reportTypeRepository;
+    }
+
+
+    @Override
+    public List<ReportType> listarReportType() {
+        return reportTypeRepository.findAll();
     }
 
     @Override
-    public List<EmergencyAgency> listarEmergencyAgency() {
-        return agencyRepository.findAll();
-    }
-
-    @Override
-    public ResponseEntity<?> crearImagen(String name, MultipartFile image, String phone) {
+    public ResponseEntity<?> crearImagen(String name, MultipartFile image, String color) {
 
         if(!existeNombre(name)){
-            EmergencyAgency agency;
+            ReportType agency;
             try {
-                agency = new EmergencyAgency(name, new Date(), new Binary(image.getBytes()),
+                agency = new ReportType(name,
+                        new Date(),
+                        new Binary(image.getBytes()),
                         image.getContentType(), image.getSize(),
                         Objects.requireNonNull(image.getOriginalFilename()).substring(image.getOriginalFilename().lastIndexOf(".")),
                         Base64.getEncoder().encodeToString(new Binary(image.getBytes()).getData()),
-                        phone);
+                        color);
             } catch (IOException e) {
-                log.error("ERROR Crear Imagen - Emergency Agency: " + e.getMessage() + " OTRO:" + e.getLocalizedMessage());
+                log.error("ERROR Crear Imagen - Report Type: " + e.getMessage() + " OTRO:" + e.getLocalizedMessage());
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error creando imagen");
             }
-            agencyRepository.save(agency);
+            reportTypeRepository.save(agency);
         } else {
-            editarImagen(name, name,image, phone);
+            editarImagen(name, name,image, color);
         }
         log.info("guardo foto");
         return ResponseEntity.status(HttpStatus.CREATED).body("Creacion Correcta");
     }
 
     @Override
-    public ResponseEntity<?> editarImagen(String name, String newName, MultipartFile image, String phone) {
+    public ResponseEntity<?> editarImagen(String name, String newName, MultipartFile image, String color) {
         if(existeNombre(name)){
-            EmergencyAgency agency = agencyRepository.findByName(name);
+            ReportType agency = reportTypeRepository.findByName(name);
             if(!newName.isEmpty())
                 agency.setName(name);
             if(!image.isEmpty()){
@@ -71,15 +74,15 @@ public class EmergencyAgencyService implements IEmergencyAgencyService{
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error editando imagen");
                 }
             }
-            if(!phone.isEmpty())
-                agency.setPhone(phone);
-            agencyRepository.save(agency);
+            if(!color.isEmpty())
+                agency.setColor(color);
+            reportTypeRepository.save(agency);
             return ResponseEntity.status(HttpStatus.OK).body("Evento modificado correctamente");
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Evento no existe");
     }
 
     private Boolean existeNombre(String name){
-        return agencyRepository.existsByName(name);
+        return reportTypeRepository.existsByName(name);
     }
 }
