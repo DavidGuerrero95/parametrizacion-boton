@@ -8,5 +8,5 @@ RUN mvn -f /home/app/pom.xml clean package -DskipTests
 FROM openjdk:12
 VOLUME /tmp
 ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} Usuarios.jar
-ENTRYPOINT ["java","-jar","/Usuarios.jar"]
+COPY --from=build /home/app/target/*.jar app.jar
+ENTRYPOINT ["sh", "-c", "java -jar /app.jar"]
